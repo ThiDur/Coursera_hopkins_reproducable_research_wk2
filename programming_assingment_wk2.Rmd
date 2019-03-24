@@ -1,0 +1,112 @@
+---
+title: "Coursera hopkins reproducable research wk2"
+author: "Thijs Durieux"
+date: "31 december 2018"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r TO BE REMOVED}
+setwd('C:/Users/tdurieux/Documents/Repositories/coursera_repos/Coursera_hopkins_reproducable_research_wk2')
+```
+
+
+## R Markdown
+
+```{r Setting up the environement}
+library(tidyverse)
+```
+
+# Loading and preprocessing the data
+Show any code that is needed to
+
+1. Load the data (i.e. read.csv())
+2. Process/transform the data (if necessary) into a format suitable for your analysis
+```{enter data, include=FALSE, echo=TRUE}
+fname <- 'activity.csv'
+df <- read.csv(fname)
+tbl <- as_tibble(df)
+```
+
+# What is mean total number of steps taken per day?
+For this part of the assignment, you can ignore the missing values in the dataset.
+
+1. Calculate the total number of steps taken per day
+```{r Mean number of steps per day, echo=TRUE}
+steps_per_day <- tbl %>%
+    group_by(date) %>%
+    summarize(steps_per_day=sum(steps, na.rm=TRUE))
+```
+
+2. If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day
+```{r Total number of steps per day, echo=TRUE}
+hist(steps_per_day$steps_per_day)
+```
+
+3. Calculate and report the mean and median of the total number of steps taken per day
+
+The mean number of steps per day is:
+```{r Mean number of steps per day, echo=TRUE}
+mean(steps_per_day$steps_per_day)
+```
+
+The meadian number of steps per day is:
+```{r Median number of steps per day, echo=TRUE}
+median(steps_per_day$steps_per_day)
+```
+
+# What is the average daily activity pattern?
+1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+
+2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+
+Summarize the data by numbeqwer of steps per time interval
+```{r Number of steps per time interval, echo=TRUE}
+steps_per_interval <- tbl %>%
+    group_by(interval) %>%
+    summarize(steps=mean(steps, na.rm=TRUE))
+```
+
+Find the interval with the maximum number of steps
+```{r Max number of steps, echo=TRUE}
+index_interval_max <- which(steps_per_interval$steps == max(steps_per_interval$steps))
+steps_per_interval$interval[index_interval_max]
+```
+
+Find the number of na in steps
+```{r Number of nas in steps, echo=TRUE}
+sapply(tbl, function(x) sum(is.na(x)))[1]
+```
+
+Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with \color{red}{\verb|NA|}NAs)
+Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+Fill missing values with mean of the same time interval
+```{r filling missing values, echo=TRUE}
+avg_steps_per_interval <- function(interval){
+    steps_per_interval[match(interval, steps_per_interval$interval), ]$steps
+    # steps_per_interval$steps[steps_per_interval$interval==interval]
+}
+
+tbl_no_missing_data <- mutate(tbl, steps = if_else(is.na(steps), as.integer(avg_steps_per_interval(interval)), steps))
+
+```
+
+```{r calculate new mean and median, echo=TRUE}
+mean(tbl_no_missing_data$steps)
+median(tbl_no_missing_data$steps)
+```
+
+```{r calculate new mean and median, echo=TRUE}
+tbl_no_missing_data[match(max(tbl_no_missing_data$steps), tbl_no_missing_data$steps), ]$interval
+```
+
+```{r weekday selection, echo=TRUE}
+tbl_no_missing_data <- mutate(tbl_no_missing_data, weekday=as.POSIXlt(tbl_no_missing_data$date)$wday)
+tbl_no_missing_data <- mutate(tbl_no_missing_data, weekday=if_else(weekday %in% c(0, 6), 0, 1))
+```
