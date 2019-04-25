@@ -5,13 +5,8 @@ date: "31 december 2018"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
-
-```{r TO BE REMOVED}
-setwd('C:/Users/tdurieux/Documents/Repositories/coursera_repos/Coursera_hopkins_reproducable_research_wk2')
-```
-
-
 ## R Markdown
 
 ```{r Setting up the environement}
@@ -19,11 +14,11 @@ library(tidyverse)
 ```
 
 # Loading and preprocessing the data
-Show any code that is needed to
-
+Show any code that is needed to:
 1. Load the data (i.e. read.csv())
 2. Process/transform the data (if necessary) into a format suitable for your analysis
-```{enter data, include=FALSE, echo=TRUE}
+
+```{r enter data, include=TRUE, echo=TRUE}
 fname <- 'activity.csv'
 df <- read.csv(fname)
 tbl <- as_tibble(df)
@@ -31,9 +26,9 @@ tbl <- as_tibble(df)
 
 # What is mean total number of steps taken per day?
 For this part of the assignment, you can ignore the missing values in the dataset.
-
 1. Calculate the total number of steps taken per day
-```{r Mean number of steps per day, echo=TRUE}
+
+```{r Group data per day, echo=TRUE}
 steps_per_day <- tbl %>%
     group_by(date) %>%
     summarize(steps_per_day=sum(steps, na.rm=TRUE))
@@ -41,7 +36,7 @@ steps_per_day <- tbl %>%
 
 2. If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day
 ```{r Total number of steps per day, echo=TRUE}
-hist(steps_per_day$steps_per_day)
+hist(steps_per_day$steps_per_day, main='Number of steps per day', xlab='Steps per day', ylab='Frequency')
 ```
 
 3. Calculate and report the mean and median of the total number of steps taken per day
@@ -58,7 +53,7 @@ median(steps_per_day$steps_per_day)
 
 # What is the average daily activity pattern?
 
-Summarize the data by numbeqwer of steps per time interval
+Summarize the data by number of steps per time interval
 ```{r Number of steps per time interval, echo=TRUE}
 steps_per_interval <- tbl %>%
     group_by(interval) %>%
@@ -73,6 +68,7 @@ ggplot(data=steps_per_interval) +
     geom_line((mapping=aes(x=interval, y=steps))) + 
     xlab('interval') +
     ylab('Averiag number of steps')
+    
 ```
 
 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
@@ -97,10 +93,11 @@ sum(is.na(tbl$steps))
 
 2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
-```{r filling missing values, echo=TRUE}
+To fill missing values a function is made that replaces a value with the average number of steps taken in that interval. 
+
+```{r function for filling missing values, echo=TRUE}
 avg_steps_per_interval <- function(interval){
     steps_per_interval[match(interval, steps_per_interval$interval), ]$steps
-    # steps_per_interval$steps[steps_per_interval$interval==interval]
 }
 
 ```
@@ -111,26 +108,26 @@ avg_steps_per_interval <- function(interval){
 tbl_no_missing_data <- mutate(tbl, steps = if_else(is.na(steps), as.integer(avg_steps_per_interval(interval)), steps))
 ```
 
-```{r calculate new mean and median, echo=TRUE}
-tbl_no_missing_data[match(max(tbl_no_missing_data$steps), tbl_no_missing_data$steps), ]$interval
-```
-
-
 4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 
 ```{r calculate new mean and median, echo=TRUE}
-mean(tbl_no_missing_data$steps)
-median(tbl_no_missing_data$steps)/
+steps_per_day_no_missing_data <- tbl_no_missing_data %>%
+    group_by(date) %>%
+    summarize(steps_per_day=sum(steps))
+mean(steps_per_day_no_missing_data$steps_per_day)
+median(steps_per_day_no_missing_data$steps_per_day)
 ```
+Indeed the estimates differ from the first part of the assignment. Both the mean and median increased.
 
-```{r total_missing_values, echo=TRUE}
+Check to see if the number of missing values is indeed 0
+```{r check_total_missing_values, echo=TRUE}
 sum(is.na(tbl_no_missing_data$steps))
 
 ```
 
-```{r calculate new mean and median, echo=TRUE}
-tbl_no_missing_data[match(max(tbl_no_missing_data$steps), tbl_no_missing_data$steps), ]$interval
+```{r new steps per day histogram, echo=TRUE}
+hist(steps_per_day_no_missing_data$steps_per_day, main='Number of steps per day', xlab='Steps per day', ylab='Frequency')
 ```
 # Are there differences in activity patterns between weekdays and weekends?
 For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
